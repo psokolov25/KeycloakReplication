@@ -1,0 +1,50 @@
+{
+  "realm": "aritmos_platform",
+  "enabled": true,
+  "displayName": "Aritmos Platform",
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Tech",
+      "lastName": "Admin",
+      "email": "admin@aritmos.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "realm-admin"
+      ],
+      "groups": [
+        "REGION"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "REGION",
+      "attributes": {
+        "type": [
+          "region"
+        ]
+      }
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "realm-admin",
+        "description": "Realm administrator",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "aritmos_platform"
+      }
+    ],
+    "client": {}
+  }
+}

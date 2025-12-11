@@ -1,0 +1,46 @@
+services:
+  pg-branch:
+    image: postgres:16
+    container_name: pg-branch
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: dev_branch_pass
+    command: >
+      postgres
+      -c wal_level=logical
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c max_connections=200
+    volumes:
+      - pg-branch-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  keycloak-branch:
+    image: quay.io/keycloak/keycloak:24.0.0
+    container_name: keycloak-branch
+    depends_on:
+      pg-branch:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: pg-branch
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: dev_branch_pass
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+      KC_LOG_LEVEL: DEBUG
+    command:
+      - start-dev
+    ports:
+      - "8080:8080"
+
+volumes:
+  pg-branch-data: {}

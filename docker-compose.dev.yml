@@ -1,0 +1,120 @@
+services:
+  pg-center:
+    image: postgres:16
+    container_name: pg-center
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: dev_center_pass
+    command: >
+      postgres
+      -c wal_level=logical
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c max_connections=200
+    volumes:
+      - pg-center-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  pg-branch:
+    image: postgres:16
+    container_name: pg-branch
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: dev_branch_pass
+    command: >
+      postgres
+      -c wal_level=logical
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c max_connections=200
+    volumes:
+      - pg-branch-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  keycloak-center:
+    image: quay.io/keycloak/keycloak:24.0.0
+    container_name: keycloak-center
+    depends_on:
+      pg-center:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: pg-center
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: dev_center_pass
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+      KC_LOG_LEVEL: DEBUG
+    command:
+      - start-dev
+      - --import-realm
+    volumes:
+      - ./realms:/opt/keycloak/data/import:ro
+    ports:
+      - "8080:8080"
+
+  keycloak-branch:
+    image: quay.io/keycloak/keycloak:24.0.0
+    container_name: keycloak-branch
+    depends_on:
+      pg-branch:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: pg-branch
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: dev_branch_pass
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+      KC_LOG_LEVEL: DEBUG
+    command:
+      - start-dev
+    ports:
+      - "8081:8080"
+
+  repl-init:
+    image: postgres:16
+    container_name: repl-init
+    depends_on:
+      pg-center:
+        condition: service_healthy
+      pg-branch:
+        condition: service_healthy
+    environment:
+      CENTER_DB_HOST: pg-center
+      CENTER_DB_PORT: "5432"
+      CENTER_DB_NAME: keycloak
+      CENTER_DB_USER: keycloak
+      CENTER_DB_PASSWORD: dev_center_pass
+      BRANCH_DB_HOST: pg-branch
+      BRANCH_DB_PORT: "5432"
+      BRANCH_DB_NAME: keycloak
+      BRANCH_DB_USER: keycloak
+      BRANCH_DB_PASSWORD: dev_branch_pass
+      REPL_INIT_MAX_WAIT: "300"
+      REPL_INIT_SLEEP_STEP: "5"
+      REPL_INIT_INITIAL_SLEEP: "400"
+    volumes:
+      - ./repl-init/repl-init.sh:/repl-init.sh:ro
+      - ./sql:/sql:ro
+    entrypoint: ["/bin/bash", "/repl-init.sh"]
+
+volumes:
+  pg-center-data: {}
+  pg-branch-data: {}
