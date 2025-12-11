@@ -1,6 +1,5 @@
--- center-publication-longtime.sql
--- Динамическая публикация для «долгоиграющих» сущностей Keycloak
--- (исключаем таблицы сессий и подобные).
+-- sql/center-publication-longtime.sql
+-- Динамическая публикация всех «долгоиграющих» таблиц схемы public, исключая session-подобные таблицы.
 
 DO $$
 DECLARE

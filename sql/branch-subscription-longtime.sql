@@ -1,8 +1,7 @@
--- branch-subscription-longtime.sql
+-- sql/branch-subscription-longtime.sql
 -- Безопасная настройка подписки на публикацию keycloak_longtime_pub.
--- ВАЖНО: DROP SUBSCRIPTION нельзя выполнять внутри транзакционного блока (DO/FUNCTION),
--- поэтому здесь используется комбинация DO для ALTER (с проверкой существования)
--- и отдельного DROP SUBSCRIPTION IF EXISTS.
+-- ВАЖНО: здесь НЕТ ссылок на конкретные таблицы схемы Keycloak.
+-- Скрипт управляет только подпиской: DISABLE (если есть), DROP, CREATE.
 
 DO $$
 BEGIN

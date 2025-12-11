@@ -20,12 +20,39 @@ services:
       timeout: 5s
       retries: 10
 
+  repl-init:
+    image: postgres:16
+    container_name: repl-init
+    depends_on:
+      pg-branch:
+        condition: service_healthy
+    environment:
+      CENTER_DB_HOST: center-db-host         # ЗАМЕНИТЬ на реальный хост/адрес PostgreSQL центра
+      CENTER_DB_PORT: "5432"
+      CENTER_DB_NAME: keycloak
+      CENTER_DB_USER: keycloak
+      CENTER_DB_PASSWORD: dev_center_pass
+      BRANCH_DB_HOST: pg-branch
+      BRANCH_DB_PORT: "5432"
+      BRANCH_DB_NAME: keycloak
+      BRANCH_DB_USER: keycloak
+      BRANCH_DB_PASSWORD: dev_branch_pass
+      REPL_INIT_MAX_WAIT: "300"
+      REPL_INIT_SLEEP_STEP: "5"
+      REPL_INIT_INITIAL_SLEEP: "400"
+    volumes:
+      - ./repl-init/repl-init.sh:/repl-init.sh:ro
+      - ./sql:/sql:ro
+    entrypoint: ["/bin/bash", "/repl-init.sh"]
+
   keycloak-branch:
     image: quay.io/keycloak/keycloak:24.0.0
     container_name: keycloak-branch
     depends_on:
       pg-branch:
         condition: service_healthy
+      repl-init:
+        condition: service_completed_successfully
     environment:
       KC_DB: postgres
       KC_DB_URL_HOST: pg-branch
